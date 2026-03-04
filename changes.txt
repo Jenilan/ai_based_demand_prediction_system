@@ -1,0 +1,98 @@
+Realtime AI Demand Prediction - Optimization and Feature Upgrade
+Date: 2026-03-01
+
+Summary
+- Implemented a production-style realtime dashboard update pipeline tied to the uploaded CSV file.
+- Fixed missing-chart scenarios and ensured chart/table/KPI updates stay in sync with backend data.
+- Added performance and resilience improvements to reduce unnecessary recomputation and rerendering.
+
+What Was Changed
+
+1) Backend Performance and Data Consistency
+File: analytics/predictor.py
+- Upgraded `analyze_csv()` to reuse predictor instances through a configuration-based predictor pool.
+- Result: in-memory analysis cache now survives across repeated API refresh calls for the same CSV file.
+- Benefit: faster repeated realtime refreshes and lower CPU usage.
+
+File: analytics/views.py
+- Added `_build_chart_context(result)` usage in both processing paths (already done in previous step, kept as baseline).
+- Extended `api_chart_data` response with:
+  - `generated_at` (API response generation timestamp)
+  - `file_last_modified` (uploaded CSV file mtime)
+  - `data_signature` (SHA-256 signature of prediction-relevant payload)
+- Benefit: frontend can detect unchanged data and skip expensive redraws while still showing freshness.
+
+2) Frontend Realtime System Upgrade
+File: analytics/templates/analytics/results.html
+
+Realtime Controls and Freshness
+- Added realtime metadata display:
+  - Last sync time
+  - Source file last updated time
+- Added adaptive polling strategy:
+  - Base polling interval: 15s
+  - Automatic backoff up to 60s on repeated failures
+  - Polling slowdown when tab is hidden
+  - Immediate refresh when tab becomes visible
+
+Smart Update Strategy
+- Added signature-aware update path:
+  - If `data_signature` is unchanged, UI skips heavy chart/table rerender during auto-poll.
+  - Manual refresh still forces full update.
+
+Chart Rendering Improvements
+- Main chart now supports dynamic mode switching:
+  - Line chart for historical trend + forecast if history exists
+  - Fallback comparative bar chart (Top Selling vs Restock Suggestion) when history is absent
+- Added safe chart recreation logic to handle mode changes without stale state.
+- Additional charts (bar/pie/trend pie) now update both labels and values in realtime.
+
+Top Products and Restock Tables - Live Updates
+- Added DOM targets for live rendering:
+  - `tbody#topProductsBody`
+  - `tbody#restockBody`
+- Implemented realtime table rerender from API response.
+- Added delta badges to highlight item-level changes between refreshes:
+  - Top selling delta by `total_sold`
+  - Restock delta by `forecast`
+
+3) Reliability and Validation
+- Kept all updates defensive (checks for missing DOM, missing arrays, and API errors).
+- Preserved existing manual "Refresh Charts" button and improved behavior.
+- Validation performed:
+  - `python manage.py check` passed
+  - `python -m py_compile analytics/views.py analytics/predictor.py` passed
+
+How This Meets Your Requirement
+- Dashboard now reflects uploaded CSV-derived predictions and product/restock outputs in near realtime.
+- Empty chart area is now always populated when either history data or product/restock data exists.
+- KPI cards, charts, and both tables update from the same API payload to remain consistent.
+- Solution is optimized to avoid unnecessary work on unchanged data and to handle transient failures gracefully.
+
+Files Modified
+- analytics/predictor.py
+- analytics/views.py
+- analytics/templates/analytics/results.html
+- changes.txt
+
+Additional UI + Chart Reliability Fixes (2026-03-01, follow-up)
+
+1) Empty chart area fix
+- Root cause identified: frontend depended on CDN Chart.js only; if Chart.js is unavailable/blocked, the canvas remained blank.
+- Implemented native Canvas fallback renderer for the main chart:
+  - History + forecast fallback line chart
+  - Top-selling vs restock fallback grouped bar chart
+- Added safe chart-mode redraw on window resize.
+- Result: the main chart area now renders even without external Chart.js availability.
+
+2) Template rendering correctness fix
+- Fixed inline template variable formatting for uploaded file display in `results.html`.
+- Result: file name now renders correctly (no literal `{{ uploaded_file }}` output).
+
+3) Navbar update (GitHub removed)
+- Removed GitHub nav link from `base.html`.
+- Added useful in-app navigation/status:
+  - Upload CSV
+  - Dashboard
+  - Realtime Enabled badge
+- Existing layout and core flow preserved.

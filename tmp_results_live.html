@@ -1,0 +1,1050 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prediction Dashboard — Demand Prediction</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/analytics/css/site.css">
+    
+    
+<!-- Loading Overlay Styles -->
+<style>
+  #loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    display: none;
+    /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .spinner-border-lg {
+    width: 3rem;
+    height: 3rem;
+  }
+</style>
+
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fa-solid fa-chart-line me-2"></i>DemandPredict
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsMain">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarsMain">
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link" href="/">
+                  <i class="fa-solid fa-upload me-1"></i>Upload CSV
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/">
+                  <i class="fa-solid fa-chart-line me-1"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item d-flex align-items-center ms-lg-3">
+              <span class="badge text-bg-success" id="navRealtimeBadge">Realtime Enabled</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container my-5 flex-grow-1">
+      
+
+      
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+  <div class="spinner-border text-primary spinner-border-lg mb-3" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <h4 class="text-gray-800 fw-bold">Analyzing Data...</h4>
+  <p class="text-muted">ChatGPT is generating your business insights. This may take a moment.</p>
+</div>
+
+<div class="row mb-4 align-items-center">
+  <div class="col-md-8">
+    <h1 class="h3 mb-0 fw-bold text-gray-800">Forecast Dashboard</h1>
+    <p class="text-muted small mb-0">Analysis based on file: <span class="fw-medium text-dark">uploads/8668bd71600a4ebbac2e3daabdddfd27_products-100.csv</span></p>
+  </div>
+  <div class="col-md-4 text-md-end mt-3 mt-md-0">
+    <button id="refreshChartsBtn" class="btn btn-info shadow-sm" title="Refresh charts with latest data">
+      <i class="fa-solid fa-arrows-rotate me-2"></i>Refresh Charts
+    </button>
+    <a id="newAnalysisBtn" href="/" class="btn btn-primary shadow-sm ms-2" onclick="showLoading()">
+      <i class="fa-solid fa-plus me-2"></i>New Analysis
+    </a>
+    
+    <a id="downloadBtn" href="/results/download/?file=uploads/8668bd71600a4ebbac2e3daabdddfd27_products-100.csv"
+      class="btn btn-outline-primary shadow-sm ms-2">
+      <i class="fa-solid fa-download me-2"></i>Download CSV
+    </a>
+    
+    <div class="small text-muted mt-2">
+      Last sync: <span id="lastSyncedAt">--</span><br>
+      Source updated: <span id="fileUpdatedAt">--</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- Key Metrics -->
+<div class="row g-4 mb-5">
+  <div class="col-md-4">
+    <div class="card h-100 border-start border-4 border-primary">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="text-uppercase text-muted small fw-bold mb-0">Predicted Demand</h6>
+          <i class="fa-solid fa-bullseye text-primary h4 mb-0 opacity-50"></i>
+        </div>
+        <div class="display-6 fw-bold text-gray-900" data-metric="predicted-demand">5023</div>
+        <div class="text-muted small">Units next month</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 border-start border-4 border-success">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="text-uppercase text-muted small fw-bold mb-0">Est. Revenue</h6>
+          <i class="fa-solid fa-sack-dollar text-success h4 mb-0 opacity-50"></i>
+        </div>
+        <div class="display-6 fw-bold text-gray-900" data-metric="estimated-revenue">
+          $2204983.50
+        </div>
+        <div class="text-muted small">Based on avg. price</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 border-start border-4 border-warning">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="text-uppercase text-muted small fw-bold mb-0">Suggested Stock</h6>
+          <i class="fa-solid fa-boxes-stacked text-warning h4 mb-0 opacity-50"></i>
+        </div>
+        <div class="display-6 fw-bold text-gray-900" data-metric="suggested-stock">5988</div>
+        <div class="text-muted small">Includes safety stock</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Chart Section -->
+  <div class="col-lg-8">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0">Sales Trend & Forecast</h5>
+      </div>
+      <div class="card-body p-4">
+        <div style="height: 350px; position: relative;">
+          <canvas id="salesChart"></canvas>
+        </div>
+        
+        <div class="mt-4" style="height:200px; position: relative; padding-top:1rem;">
+          <canvas id="trendPieChart"></canvas>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- Wellness Report -->
+  <div class="col-lg-4">
+    <div class="card h-100 bg-gradient-light shadow-sm">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0">Business Intelligence (AI)</h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="report-content" style="white-space: pre-line;">
+          Trend: Sales have been trending DOWN over the last 3 months.
+Forecast: We predict 5022 units for next month.
+Financials: Estimated Revenue: $2,204,983.50 (Avg Price: $451.19)
+
+(Note: AI configuration missing. Using standard functionality.)
+        </div>
+
+        <hr class="my-4 opacity-10">
+
+        <div class="small text-muted">
+          <strong>Model Used:</strong> Item-Level Aggregation<br>
+          
+          <strong>History:</strong> 5 months analyzed
+        </div>
+
+        
+        <hr class="my-4 opacity-10">
+        <div class="row">
+          <div class="col-6">
+            <h6 class="fw-bold">Additional Chart</h6>
+            <canvas id="barChart"></canvas>
+          </div>
+          <div class="col-6">
+            <h6 class="fw-bold">Distribution</h6>
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row g-4 mt-2">
+  <!-- Top Products -->
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i>Top Selling Products</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Product</th>
+                <th class="text-end pe-4">Total Sold</th>
+              </tr>
+            </thead>
+            <tbody id="topProductsBody">
+              
+              <tr>
+                <td class="ps-4 fw-medium">Smart Lamp</td>
+                <td class="text-end pe-4">100</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Clean Blender Scale Lite</td>
+                <td class="text-end pe-4">99</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Eco Heater Toaster Stove Silent Sense</td>
+                <td class="text-end pe-4">98</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Fast Thermostat Microphone Scooter</td>
+                <td class="text-end pe-4">97</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Router</td>
+                <td class="text-end pe-4">96</td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restock Recommendations -->
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100 border-start border-4 border-danger">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list text-danger me-2"></i>Restock Suggestions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Product</th>
+                <th class="text-end">Forecast</th>
+                <th class="text-end pe-4">Suggested Stock</th>
+              </tr>
+            </thead>
+            <tbody id="restockBody">
+              
+              <tr>
+                <td class="ps-4 fw-medium">Smart Lamp</td>
+                <td class="text-end">100</td>
+                <td class="text-end pe-4 fw-bold text-success">120</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Clean Blender Scale Lite</td>
+                <td class="text-end">99</td>
+                <td class="text-end pe-4 fw-bold text-success">118</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Eco Heater Toaster Stove Silent Sense</td>
+                <td class="text-end">98</td>
+                <td class="text-end pe-4 fw-bold text-success">117</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Fast Thermostat Microphone Scooter</td>
+                <td class="text-end">97</td>
+                <td class="text-end pe-4 fw-bold text-success">116</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Router</td>
+                <td class="text-end">96</td>
+                <td class="text-end pe-4 fw-bold text-success">115</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Ultra Radio Radio</td>
+                <td class="text-end">95</td>
+                <td class="text-end pe-4 fw-bold text-success">114</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Scanner</td>
+                <td class="text-end">94</td>
+                <td class="text-end pe-4 fw-bold text-success">112</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Fridge Cooker</td>
+                <td class="text-end">93</td>
+                <td class="text-end pe-4 fw-bold text-success">111</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Portable Scooter Wireless Digital</td>
+                <td class="text-end">92</td>
+                <td class="text-end pe-4 fw-bold text-success">110</td>
+              </tr>
+              
+              <tr>
+                <td class="ps-4 fw-medium">Automatic Trimmer Sense</td>
+                <td class="text-end">91</td>
+                <td class="text-end pe-4 fw-bold text-success">109</td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+    </main>
+
+    <footer class="py-4 mt-auto">
+      <div class="container text-center">
+        <p class="text-muted small mb-0">©  DemandPredict — AI-Powered Analytics</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+<script id="chart-bootstrap-data" type="application/json">{"dates": ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03"], "sales": [45, 775, 1736, 2394, 100], "forecast": 5022.5, "bar_labels": ["Smart Lamp", "Clean Blender Scale Lite", "Eco Heater Toaster Stove Silent Sense", "Fast Thermostat Microphone Scooter", "Router"], "bar_values": [100, 99, 98, 97, 96], "pie_labels": ["Smart Lamp", "Clean Blender Scale Lite", "Eco Heater Toaster Stove Silent Sense", "Fast Thermostat Microphone Scooter", "Router"], "pie_values": [100.0, 99.0, 98.0, 97.0, 96.0]}</script>
+<script>
+  // Global chart objects for live updates
+  let chartInstances = {};
+  let fallbackChartState = null;
+  const chartJsAvailable = typeof window.Chart === 'function';
+  const uploadedFileParam = new URLSearchParams(window.location.search).get('file');
+  const BASE_POLL_MS = 15000;
+  const MAX_POLL_MS = 60000;
+  let currentPollMs = BASE_POLL_MS;
+  let pollingTimer = null;
+  let consecutiveFailures = 0;
+  let lastDataSignature = null;
+  let lastTopProductsSnapshot = {};
+  let lastRestockSnapshot = {};
+
+  // Loading State Global Function
+  function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatNumber(value, digits = 0) {
+    const num = Number(value || 0);
+    return num.toLocaleString(undefined, {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits
+    });
+  }
+
+  function formatDateTimeIso(isoString) {
+    if (!isoString) return '--';
+    const dt = new Date(isoString);
+    if (Number.isNaN(dt.getTime())) return isoString;
+    return dt.toLocaleString();
+  }
+
+  function updateFreshnessIndicators(generatedAt, fileUpdatedAt) {
+    const syncEl = document.getElementById('lastSyncedAt');
+    const fileEl = document.getElementById('fileUpdatedAt');
+    if (syncEl) syncEl.textContent = formatDateTimeIso(generatedAt);
+    if (fileEl) fileEl.textContent = formatDateTimeIso(fileUpdatedAt);
+  }
+
+  function renderTopProductsTable(topProducts) {
+    const body = document.getElementById('topProductsBody');
+    if (!body) return;
+
+    if (!topProducts || !topProducts.length) {
+      body.innerHTML = '<tr><td colspan="2" class="text-center text-muted py-3">No product data available</td></tr>';
+      lastTopProductsSnapshot = {};
+      return;
+    }
+
+    const rows = topProducts.map(item => {
+      const name = String(item.item || 'Unknown');
+      const sold = Number(item.total_sold || 0);
+      const prev = Number(lastTopProductsSnapshot[name] ?? sold);
+      const diff = sold - prev;
+      const diffBadge = diff > 0
+        ? `<span class="badge bg-success ms-2">+${formatNumber(diff)}</span>`
+        : diff < 0
+          ? `<span class="badge bg-danger ms-2">${formatNumber(diff)}</span>`
+          : '';
+      return `<tr>
+        <td class="ps-4 fw-medium">${escapeHtml(name)}</td>
+        <td class="text-end pe-4">${formatNumber(sold)}${diffBadge}</td>
+      </tr>`;
+    }).join('');
+
+    body.innerHTML = rows;
+    lastTopProductsSnapshot = Object.fromEntries(
+      topProducts.map(item => [String(item.item || 'Unknown'), Number(item.total_sold || 0)])
+    );
+  }
+
+  function renderRestockTable(restockRecs) {
+    const body = document.getElementById('restockBody');
+    if (!body) return;
+
+    if (!restockRecs || !restockRecs.length) {
+      body.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No restock needs identified</td></tr>';
+      lastRestockSnapshot = {};
+      return;
+    }
+
+    const rows = restockRecs.map(item => {
+      const name = String(item.item || 'Unknown');
+      const forecast = Number(item.forecast || 0);
+      const stock = Number(item.stock_suggested || 0);
+      const prevForecast = Number(lastRestockSnapshot[name] ?? forecast);
+      const delta = forecast - prevForecast;
+      const deltaBadge = delta > 0
+        ? `<span class="badge bg-warning text-dark ms-2">+${formatNumber(delta)}</span>`
+        : delta < 0
+          ? `<span class="badge bg-secondary ms-2">${formatNumber(delta)}</span>`
+          : '';
+
+      return `<tr>
+        <td class="ps-4 fw-medium">${escapeHtml(name)}</td>
+        <td class="text-end">${formatNumber(forecast)}${deltaBadge}</td>
+        <td class="text-end pe-4 fw-bold text-success">${formatNumber(stock)}</td>
+      </tr>`;
+    }).join('');
+
+    body.innerHTML = rows;
+    lastRestockSnapshot = Object.fromEntries(
+      restockRecs.map(item => [String(item.item || 'Unknown'), Number(item.forecast || 0)])
+    );
+  }
+
+  function renderDemandTables(topProducts, restockRecs) {
+    renderTopProductsTable(topProducts || []);
+    renderRestockTable(restockRecs || []);
+  }
+
+  function buildMergedSeries(barLabels, barValues, pieLabels, pieValues) {
+    const soldMap = Object.fromEntries((barLabels || []).map((label, idx) => [label, Number((barValues || [])[idx] || 0)]));
+    const restockMap = Object.fromEntries((pieLabels || []).map((label, idx) => [label, Number((pieValues || [])[idx] || 0)]));
+    const mergedLabels = Array.from(new Set([...(barLabels || []), ...(pieLabels || [])]));
+    const soldSeries = mergedLabels.map(label => soldMap[label] || 0);
+    const restockSeries = mergedLabels.map(label => restockMap[label] || 0);
+    return { mergedLabels, soldSeries, restockSeries };
+  }
+
+  function setupCanvasForFallback(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.max(320, Math.floor(rect.width || 700));
+    const height = Math.max(260, Math.floor(rect.height || 350));
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, width, height };
+  }
+
+  function drawAxes(ctx, width, height, margin, yLabel = 'Units') {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, height - margin.bottom);
+    ctx.lineTo(width - margin.right, height - margin.bottom);
+    ctx.stroke();
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillText(yLabel, 8, margin.top + 10);
+  }
+
+  function renderFallbackHistoryChart(canvas, dates, sales, forecast) {
+    if (!canvas || !dates || !dates.length || !sales || !sales.length) return;
+    const { ctx, width, height } = setupCanvasForFallback(canvas);
+    const margin = { top: 20, right: 20, bottom: 40, left: 52 };
+    drawAxes(ctx, width, height, margin, 'Units');
+
+    const labels = [...dates, 'Forecast'];
+    const values = [...sales, Number(forecast || 0)];
+    const maxY = Math.max(1, ...values);
+    const minY = 0;
+    const plotW = width - margin.left - margin.right;
+    const plotH = height - margin.top - margin.bottom;
+    const stepX = labels.length > 1 ? plotW / (labels.length - 1) : plotW;
+    const toX = i => margin.left + i * stepX;
+    const toY = v => margin.top + plotH - ((v - minY) / (maxY - minY || 1)) * plotH;
+
+    // Historical line
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    sales.forEach((v, i) => {
+      const x = toX(i);
+      const y = toY(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Forecast line
+    ctx.strokeStyle = '#10b981';
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    const lastIdx = sales.length - 1;
+    ctx.moveTo(toX(lastIdx), toY(sales[lastIdx]));
+    ctx.lineTo(toX(labels.length - 1), toY(forecast));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Points + x labels
+    ctx.fillStyle = '#374151';
+    ctx.font = '11px Inter, sans-serif';
+    labels.forEach((label, i) => {
+      const x = toX(i);
+      const sourceValue = i < sales.length ? sales[i] : forecast;
+      const y = toY(sourceValue);
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = i < sales.length ? '#2563eb' : '#10b981';
+      ctx.fill();
+      ctx.fillStyle = '#4b5563';
+      const txt = String(label).slice(2);
+      ctx.fillText(txt, x - 16, height - 16);
+    });
+  }
+
+  function renderFallbackProductChart(canvas, labels, soldValues, forecastValues) {
+    if (!canvas || !labels || !labels.length) return;
+    const { ctx, width, height } = setupCanvasForFallback(canvas);
+    const margin = { top: 20, right: 20, bottom: 72, left: 52 };
+    drawAxes(ctx, width, height, margin, 'Units');
+
+    const maxY = Math.max(1, ...soldValues, ...forecastValues);
+    const plotW = width - margin.left - margin.right;
+    const plotH = height - margin.top - margin.bottom;
+    const groupW = plotW / labels.length;
+    const barW = Math.max(6, groupW * 0.28);
+    const toY = v => margin.top + plotH - (v / maxY) * plotH;
+
+    labels.forEach((label, i) => {
+      const baseX = margin.left + i * groupW + (groupW - barW * 2 - 4) / 2;
+      const sold = Number(soldValues[i] || 0);
+      const fc = Number(forecastValues[i] || 0);
+      const ySold = toY(sold);
+      const yFc = toY(fc);
+
+      ctx.fillStyle = 'rgba(37,99,235,0.75)';
+      ctx.fillRect(baseX, ySold, barW, margin.top + plotH - ySold);
+      ctx.fillStyle = 'rgba(16,185,129,0.65)';
+      ctx.fillRect(baseX + barW + 4, yFc, barW, margin.top + plotH - yFc);
+
+      ctx.fillStyle = '#4b5563';
+      ctx.font = '10px Inter, sans-serif';
+      const shortLabel = String(label).length > 10 ? `${String(label).slice(0, 10)}..` : String(label);
+      ctx.fillText(shortLabel, baseX - 2, height - 16);
+    });
+  }
+
+  function redrawFallbackChart() {
+    if (chartJsAvailable || !fallbackChartState) return;
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) return;
+    if (fallbackChartState.type === 'history') {
+      renderFallbackHistoryChart(canvas, fallbackChartState.labels, fallbackChartState.sales, fallbackChartState.forecast);
+    } else if (fallbackChartState.type === 'product') {
+      renderFallbackProductChart(canvas, fallbackChartState.labels, fallbackChartState.soldValues, fallbackChartState.forecastValues);
+    }
+  }
+
+  function renderHistorySalesChart(dates, sales, forecast) {
+    if (!dates || !dates.length || !sales || !sales.length) return;
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) return;
+
+    if (!chartJsAvailable) {
+      fallbackChartState = {
+        type: 'history',
+        labels: dates,
+        sales: sales,
+        forecast: Number(forecast || 0),
+      };
+      renderFallbackHistoryChart(canvas, dates, sales, Number(forecast || 0));
+      return;
+    }
+
+    if (chartInstances.salesChart) {
+      chartInstances.salesChart.destroy();
+    }
+
+    const labels = [...dates, 'Forecast'];
+    const salesData = [...sales, null];
+    const lastHistVal = sales[sales.length - 1];
+    const forecastData = new Array(sales.length).fill(null);
+    forecastData[sales.length - 1] = lastHistVal;
+    forecastData.push(forecast);
+
+    const ctx = canvas.getContext('2d');
+    chartInstances.salesChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Historical Sales',
+            data: salesData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Forecast',
+            data: forecastData,
+            borderColor: '#a855f7',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            tension: 0,
+            pointRadius: 5,
+            pointBackgroundColor: '#a855f7',
+            pointHoverRadius: 7
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(0);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              borderDash: [2, 2],
+              color: '#e5e7eb'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Fetch updated chart data from API
+  async function updateChartsRealtime(options = {}) {
+    const manual = Boolean(options.manual);
+    if (!uploadedFileParam) {
+      console.warn("No file parameter available for chart updates");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/analytics/api/chart-data/?file=${encodeURIComponent(uploadedFileParam)}`);
+      if (!response.ok) {
+        console.error('Failed to fetch chart data:', response.status);
+        return;
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        console.error('API error:', data.error);
+        return;
+      }
+
+      updateFreshnessIndicators(data.generated_at, data.file_last_modified);
+
+      const sameAsLast = Boolean(data.data_signature && data.data_signature === lastDataSignature);
+      if (sameAsLast && !manual) {
+        return;
+      }
+      lastDataSignature = data.data_signature || lastDataSignature;
+
+      // Update KPI metrics
+      document.querySelector('[data-metric="predicted-demand"]')?.textContent = Math.round(data.predicted_demand);
+      document.querySelector('[data-metric="estimated-revenue"]')?.textContent = data.currency + data.estimated_revenue.toFixed(2);
+      document.querySelector('[data-metric="suggested-stock"]')?.textContent = data.suggested_stock;
+      renderDemandTables(data.top_products || [], data.restock_recs || []);
+
+      // Update main chart: history trend if available, else top-selling/restock
+      if (data.dates && data.sales && data.dates.length && data.sales.length) {
+        updateSalesChart(data.dates, data.sales, data.forecast);
+      } else if (data.bar_labels && data.bar_labels.length) {
+        const { mergedLabels, soldSeries, restockSeries } = buildMergedSeries(
+          data.bar_labels, data.bar_values, data.pie_labels, data.pie_values
+        );
+        renderProductDemandChart(mergedLabels, soldSeries, restockSeries);
+      }
+
+      // Update bar chart if available
+      if (chartInstances.barChart && data.bar_labels && data.bar_values) {
+        updateBarChart(data.bar_labels, data.bar_values);
+      }
+
+      // Update pie chart if available
+      if (chartInstances.pieChart && data.pie_labels && data.pie_values) {
+        updatePieChart(data.pie_labels, data.pie_values);
+      }
+
+      // Update trend pie chart if available
+      if (chartInstances.trendPieChart && data.pie_labels && data.pie_values) {
+        updateTrendChart(data.pie_labels, data.pie_values);
+      }
+
+      // Update report if placeholder exists
+      const reportElement = document.querySelector('.report-content');
+      if (reportElement && data.report) {
+        reportElement.textContent = data.report;
+      }
+
+      consecutiveFailures = 0;
+      currentPollMs = BASE_POLL_MS;
+      console.log('Charts updated successfully with new data');
+    } catch (error) {
+      consecutiveFailures += 1;
+      currentPollMs = Math.min(MAX_POLL_MS, BASE_POLL_MS * (2 ** Math.min(consecutiveFailures, 2)));
+      console.error('Error updating charts:', error);
+    }
+  }
+
+  function updateSalesChart(dates, sales, forecast) {
+    if (!chartJsAvailable) {
+      renderHistorySalesChart(dates, sales, forecast);
+      return;
+    }
+    const chart = chartInstances.salesChart;
+    if (!chart || chart.config.type !== 'line') {
+      renderHistorySalesChart(dates, sales, forecast);
+      return;
+    }
+
+    const labels = [...dates, 'Forecast'];
+    const salesData = [...sales, null];
+    
+    const lastHistVal = sales[sales.length - 1];
+    const forecastData = new Array(sales.length).fill(null);
+    forecastData[sales.length - 1] = lastHistVal;
+    forecastData.push(forecast);
+
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = salesData;
+    chart.data.datasets[1].data = forecastData;
+    chart.update('none'); // Update without animation for smooth real-time feel
+  }
+
+  function renderProductDemandChart(labels, soldValues, forecastValues) {
+    const canvas = document.getElementById('salesChart');
+    if (!canvas || !labels || !labels.length) return;
+
+    if (!chartJsAvailable) {
+      fallbackChartState = {
+        type: 'product',
+        labels: labels,
+        soldValues: soldValues,
+        forecastValues: forecastValues,
+      };
+      renderFallbackProductChart(canvas, labels, soldValues, forecastValues);
+      return;
+    }
+
+    if (chartInstances.salesChart) {
+      chartInstances.salesChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    chartInstances.salesChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Top Selling (Units)',
+            data: soldValues,
+            backgroundColor: 'rgba(59,130,246,0.65)',
+            borderColor: '#3b82f6',
+            borderWidth: 1
+          },
+          {
+            label: 'Restock Suggestion (Units)',
+            data: forecastValues,
+            backgroundColor: 'rgba(16,185,129,0.55)',
+            borderColor: '#10b981',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function updateBarChart(labels, values) {
+    if (!chartJsAvailable) return;
+    const chart = chartInstances.barChart;
+    if (!chart) return;
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update('none');
+  }
+
+  function updatePieChart(labels, values) {
+    if (!chartJsAvailable) return;
+    const chart = chartInstances.pieChart;
+    if (!chart) return;
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update('none');
+  }
+
+  function updateTrendChart(labels, values) {
+    if (!chartJsAvailable) return;
+    const chart = chartInstances.trendPieChart;
+    if (!chart) return;
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update('none');
+  }
+
+  // Bind to any form submission if present (mostly for the analysis page)
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function () {
+      showLoading();
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    
+  let bootstrapPayload = {};
+  try {
+    const payloadEl = document.getElementById('chart-bootstrap-data');
+    bootstrapPayload = payloadEl ? JSON.parse(payloadEl.textContent) : {};
+    if (typeof bootstrapPayload === 'string') {
+      bootstrapPayload = JSON.parse(bootstrapPayload);
+    }
+  } catch (err) {
+    console.error('Failed to parse chart bootstrap payload', err);
+    bootstrapPayload = {};
+  }
+
+  const historyDates = bootstrapPayload.dates || [];
+  const historySales = bootstrapPayload.sales || [];
+  const nextVal = Number(bootstrapPayload.forecast || 0);
+  const barLabels = bootstrapPayload.bar_labels || [];
+  const barValues = bootstrapPayload.bar_values || [];
+  const pieLabels = bootstrapPayload.pie_labels || [];
+  const pieValues = bootstrapPayload.pie_values || [];
+
+  if (historyDates && historyDates.length > 0 && historySales && historySales.length > 0) {
+    renderHistorySalesChart(historyDates, historySales, nextVal);
+  } else if (barLabels.length) {
+    const { mergedLabels, soldSeries, restockSeries } = buildMergedSeries(
+      barLabels, barValues, pieLabels, pieValues
+    );
+    renderProductDemandChart(mergedLabels, soldSeries, restockSeries);
+  }
+
+  // render additional bar and pie if provided
+  
+    if (chartJsAvailable && barLabels.length && document.getElementById('barChart')) {
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      chartInstances.barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: { labels: barLabels, datasets: [{label:'Amount', data:barValues, backgroundColor:'rgba(59,130,246,0.6)'}] },
+        options:{responsive:true, maintainAspectRatio:false}
+      });
+    }
+    if (chartJsAvailable && pieLabels.length && document.getElementById('pieChart')) {
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      chartInstances.pieChart = new Chart(pieCtx, {
+        type:'pie',
+        data:{ labels: pieLabels, datasets:[{ data: pieValues, backgroundColor:['#3b82f6','#a855f7','#10b981','#f59e0b','#ef4444'] }] },
+        options:{responsive:true, maintainAspectRatio:false}
+      });
+    }
+    // also duplicate pie into trend card if placeholder exists
+    if (chartJsAvailable && pieLabels.length && document.getElementById('trendPieChart')) {
+      const trendCtx = document.getElementById('trendPieChart').getContext('2d');
+      chartInstances.trendPieChart = new Chart(trendCtx, {
+        type:'pie',
+        data:{ labels: pieLabels, datasets:[{ data: pieValues, backgroundColor:['#3b82f6','#a855f7','#10b981','#f59e0b','#ef4444'] }] },
+        options:{responsive:true, maintainAspectRatio:false}
+      });
+    }
+  
+  
+
+  // Add refresh control
+  const refreshBtn = document.getElementById('refreshChartsBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Updating...';
+      await updateChartsRealtime({ manual: true });
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate me-2"></i>Refresh Charts';
+    });
+  }
+
+  const downloadBtn = document.getElementById('downloadBtn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      downloadBtn.classList.add('disabled');
+      downloadBtn.setAttribute('aria-disabled', 'true');
+      const original = downloadBtn.innerHTML;
+      downloadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Preparing...';
+      setTimeout(() => {
+        downloadBtn.innerHTML = original;
+        downloadBtn.classList.remove('disabled');
+        downloadBtn.removeAttribute('aria-disabled');
+      }, 2500);
+    });
+  }
+
+  const newAnalysisBtn = document.getElementById('newAnalysisBtn');
+  if (newAnalysisBtn) {
+    newAnalysisBtn.addEventListener('click', () => {
+      newAnalysisBtn.classList.add('disabled');
+      newAnalysisBtn.setAttribute('aria-disabled', 'true');
+    });
+  }
+
+  function scheduleRealtimePoll(delayMs = currentPollMs) {
+    if (pollingTimer) {
+      clearTimeout(pollingTimer);
+    }
+    pollingTimer = setTimeout(async () => {
+      if (document.hidden) {
+        scheduleRealtimePoll(Math.min(MAX_POLL_MS, currentPollMs * 2));
+        return;
+      }
+      await updateChartsRealtime({ manual: false });
+      scheduleRealtimePoll(currentPollMs);
+    }, delayMs);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      updateChartsRealtime({ manual: false });
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    redrawFallbackChart();
+  });
+
+  updateChartsRealtime({ manual: false });
+  scheduleRealtimePoll(BASE_POLL_MS);
+  });
+</script>
+
+  </body>
+</html>
+
