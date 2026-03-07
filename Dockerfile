@@ -15,13 +15,11 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy project
 COPY . /app/
 
-# Collect static files
-# Collect static files
-# We set dummy environment variables so that collectstatic can run without a real database connection
-RUN DJANGO_SECRET_KEY=dummy DJANGO_DEBUG=False python manage.py collectstatic --noinput
-
 # Expose port
 EXPOSE 8000
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "demand_pro.wsgi:application"]
+# Run collectstatic + migrations then start gunicorn (use platform PORT when available)
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} demand_pro.wsgi:application"]
+
+
+
