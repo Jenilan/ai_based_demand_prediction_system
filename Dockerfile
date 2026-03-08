@@ -20,3 +20,5 @@ EXPOSE 8000
 
 # Run migrations then start gunicorn (Render provides PORT)
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} demand_pro.wsgi:application"]
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
